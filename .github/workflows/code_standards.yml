@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  lint:
+  code-standards:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,13 +20,7 @@ jobs:
           cache: true
       - name: Run linter
         run: mise run lint
-  format:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
-        with:
-          install: true
-          cache: true
       - name: Run formatter
         run: mise run format
+      - name: Check lockfile is up to date
+        run: mise run lock-check
