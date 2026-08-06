@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 
+from .routers.charts import downloads_router
+
 app = FastAPI()
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+app.include_router(downloads_router)

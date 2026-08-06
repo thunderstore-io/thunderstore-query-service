@@ -2,6 +2,11 @@
 python = "3.14.3"
 uv = "0.12.1"
 
+[env]
+# Windows consoles default to the ANSI code page (cp1252), which can't encode the
+# emoji rich/fastapi-cli print. Force UTF-8 mode for all tasks.
+PYTHONUTF8 = "1"
+
 [tasks.dev]
 run = "uv run fastapi dev src/thunderstore_query_service/main.py"
 
