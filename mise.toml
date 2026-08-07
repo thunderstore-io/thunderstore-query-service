@@ -1,0 +1,24 @@
+[tools]
+python = "3.14.3"
+uv = "0.12.1"
+
+[tasks.dev]
+run = "uv run fastapi dev src/thunderstore_query_service/main.py"
+
+[tasks.lint]
+run = "uv run ruff check ."
+
+[tasks.format]
+run = "uv run ruff format . --check"
+
+[tasks.reformat]
+run = "uv run ruff format ."
+
+[tasks.lock-check]
+run = "uv lock --check"
+
+[tasks.test]
+run = "uv run pytest"
+
+[tasks.build]
+run = "uv build"
