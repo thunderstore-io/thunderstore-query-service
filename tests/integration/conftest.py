@@ -41,9 +41,9 @@ def docker_available() -> None:
 
 @pytest.fixture(scope="session")
 def migrations_dir() -> Path:
-    if not MIGRATIONS_DIR.is_dir():
-        pytest.skip(
-            f"ClickHouse migrations not found at {MIGRATIONS_DIR}. "
+    if not any(MIGRATIONS_DIR.glob("*.sql")):
+        pytest.fail(
+            f"No ClickHouse migrations found at {MIGRATIONS_DIR}. "
             "Run `git submodule update --init --recursive`."
         )
     return MIGRATIONS_DIR

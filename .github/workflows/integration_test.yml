@@ -1,4 +1,4 @@
-name: Test
+name: Integration Test
 
 permissions:
   contents: read
@@ -10,13 +10,20 @@ on:
   pull_request:
 
 jobs:
-  test:
+  integration-test:
     runs-on: ubuntu-latest
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GHCR_PAT }}
+
       - uses: jdx/mise-action@v2
         with:
           install: true
           cache: true
-      - name: Run tests
-        run: mise run test-unit
+
+      - name: Run integration tests
+        run: mise run test-integration
