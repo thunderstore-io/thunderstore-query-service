@@ -1,10 +1,17 @@
 import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
 from httpx2 import AsyncClient, BasicAuth
 
+from thunderstore_query_service._sql_utils import load_sql_template
+
 router = APIRouter(prefix="/api/charts/downloads")
+
+DOWNLOAD_HISTORY_QUERY = load_sql_template(
+    Path(__file__).parent / "get_download_history.sql"
+)
 
 
 @router.get("/{namespace}/{package}")
@@ -18,21 +25,8 @@ async def get_mod_download_url(namespace: str, package: str) -> list[dict[str, A
             auth=BasicAuth(
                 str(os.getenv("CLICKHOUSE_USER")), str(os.getenv("CLICKHOUSE_PASSWORD"))
             ),
-            content=(
-                "WITH versions AS ( "
-                "    SELECT id "
-                f"    FROM analytics.thunderstore_{os.getenv('TABLE_PREFIX')}_model_package_version_update_v1 mpvu "
-                "    WHERE mpvu.namespace__name = {namespace:String} "
-                "    AND mpvu.name = {package:String} "
-                ") "
-                "SELECT "
-                "    toStartOfHour(toDateTime(apd.timestamp)) AS hour, "
-                "    count() AS downloads "
-                f"FROM analytics.thunderstore_{os.getenv('TABLE_PREFIX')}_analytics_package_download_v1 apd "
-                "WHERE timestamp >= toStartOfHour(now()) - INTERVAL 7 DAY "
-                "  AND apd.version_id IN (SELECT id FROM versions) "
-                "GROUP BY hour "
-                "ORDER BY hour"
+            content=DOWNLOAD_HISTORY_QUERY.substitute(
+                table_prefix=os.getenv("TABLE_PREFIX")
             ),
             params={
                 "default_format": "JSON",

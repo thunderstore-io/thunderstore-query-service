@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from tests._utils import mock_http
-from thunderstore_query_service.routers.charts import downloads
+from thunderstore_query_service.routers.charts.downloads import downloads
 
 
 def test_download_history_success(client: TestClient):
