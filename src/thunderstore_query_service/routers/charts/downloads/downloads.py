@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
-from typing import Any
 
 from fastapi import APIRouter
 from httpx2 import AsyncClient, BasicAuth
+from pydantic import AwareDatetime, BaseModel
 
 from thunderstore_query_service._sql_utils import load_sql_template
 
@@ -14,11 +14,15 @@ DOWNLOAD_HISTORY_QUERY = load_sql_template(
 )
 
 
+class DownloadHistoryPoint(BaseModel):
+    hour: AwareDatetime
+    downloads: int
+
+
 @router.get("/{namespace}/{package}")
-async def get_mod_download_url(namespace: str, package: str) -> list[dict[str, Any]]:
-    """
-    Retrieves JSON chart download history for a given namespace and package.
-    """
+async def get_download_history(
+    namespace: str, package: str
+) -> list[DownloadHistoryPoint]:
     async with AsyncClient() as client:
         response = await client.post(
             f"{os.getenv('CLICKHOUSE_URI')}",
@@ -30,6 +34,7 @@ async def get_mod_download_url(namespace: str, package: str) -> list[dict[str, A
             ),
             params={
                 "default_format": "JSON",
+                "date_time_output_format": "iso",
                 "param_namespace": namespace,
                 "param_package": package,
             },

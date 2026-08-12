@@ -5,11 +5,10 @@ from thunderstore_query_service.routers.charts.downloads import downloads
 
 
 def test_download_history_success(client: TestClient):
-
     MOCK_DATA = {
         "data": [
-            {"hour": "2024-08-01 00:00:00", "downloads": "10"},
-            {"hour": "2024-08-01 01:00:00", "downloads": "5"},
+            {"hour": "2024-08-01T00:00:00Z", "downloads": 10},
+            {"hour": "2024-08-01T01:00:00Z", "downloads": 0},
         ],
         "rows": 2,
     }
@@ -19,6 +18,7 @@ def test_download_history_success(client: TestClient):
 
     assert response.status_code == 200
     assert response.json() == [
-        {"hour": "2024-08-01 00:00:00", "downloads": "10"},
-        {"hour": "2024-08-01 01:00:00", "downloads": "5"},
+        {"hour": "2024-08-01T00:00:00Z", "downloads": 10},
+        {"hour": "2024-08-01T01:00:00Z", "downloads": 0},
     ]
+
