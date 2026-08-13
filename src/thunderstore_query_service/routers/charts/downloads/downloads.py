@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from httpx2 import AsyncClient, BasicAuth
 from pydantic import AwareDatetime, BaseModel
 
@@ -13,6 +13,8 @@ DOWNLOAD_HISTORY_QUERY = load_sql_template(
     Path(__file__).parent / "get_download_history.sql"
 )
 
+CACHE_CONTROL = "public, max-age=300"
+
 
 class DownloadHistoryPoint(BaseModel):
     hour: AwareDatetime
@@ -21,10 +23,10 @@ class DownloadHistoryPoint(BaseModel):
 
 @router.get("/{namespace}/{package}")
 async def get_download_history(
-    namespace: str, package: str
+    namespace: str, package: str, response: Response
 ) -> list[DownloadHistoryPoint]:
     async with AsyncClient() as client:
-        response = await client.post(
+        clickhouse_response = await client.post(
             f"{os.getenv('CLICKHOUSE_URI')}",
             auth=BasicAuth(
                 str(os.getenv("CLICKHOUSE_USER")), str(os.getenv("CLICKHOUSE_PASSWORD"))
@@ -39,5 +41,6 @@ async def get_download_history(
                 "param_package": package,
             },
         )
-        response.raise_for_status()
-        return response.json()["data"]
+        clickhouse_response.raise_for_status()
+        response.headers["Cache-Control"] = CACHE_CONTROL
+        return clickhouse_response.json()["data"]
