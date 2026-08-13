@@ -17,10 +17,15 @@ jobs:
       TESTCONTAINERS_RYUK_DISABLED: "true"
     steps:
       - uses: actions/checkout@v4
-        name: 'Checkout'
-        with:
-          submodules: recursive
-          token: ${{ secrets.THUNDERSTORE_BOT_PAT }}
+
+      - name: Checkout analytics-platform
+        env:
+          SUBMODULE_TOKEN: ${{ secrets.RISKIDEV_SUBMODULE_PAT }}
+        run: |
+          git config --global \
+            url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/Riskidev/".insteadOf \
+            "https://github.com/Riskidev/"
+          git submodule update --init --recursive
 
       - uses: jdx/mise-action@v2
         with:
