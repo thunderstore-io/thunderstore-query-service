@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.GHCR_PAT }}
+          token: ${{ secrets.THUNDERSTORE_BOT_PAT }}
 
       - uses: jdx/mise-action@v2
         with:
