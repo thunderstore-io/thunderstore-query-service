@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+.ruff_cache
+.pytest_cache
+**/__pycache__
+dist
+tests
+mise.toml
+mise.local.toml
+mise.local.toml.template
+.env
+Dockerfile
+.dockerignore
+DEVELOPMENT.md
