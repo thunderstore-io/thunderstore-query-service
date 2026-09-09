@@ -1,0 +1,31 @@
+name: Integration Test
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  integration-test:
+    name: 'Integration test'
+    runs-on: ubuntu-latest
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+        name: 'Checkout'
+        with:
+          submodules: recursive
+          token: ${{ secrets.THUNDERSTORE_BOT_PAT }}
+
+      - uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+
+      - name: Run integration tests
+        run: mise run test-integration
