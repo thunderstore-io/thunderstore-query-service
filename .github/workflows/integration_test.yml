@@ -2,6 +2,7 @@ name: Integration Test
 
 permissions:
   contents: read
+  id-token: write
 
 on:
   push:
@@ -13,14 +14,41 @@ jobs:
   integration-test:
     name: 'Integration test'
     runs-on: ubuntu-latest
+    environment: thunderstore-query-service
     env:
       TESTCONTAINERS_RYUK_DISABLED: "true"
     steps:
       - uses: actions/checkout@v4
         name: 'Checkout'
+
+      - name: Authenticate with Pulumi Cloud
+        uses: pulumi/auth-actions@v2
         with:
-          submodules: recursive
-          token: ${{ secrets.THUNDERSTORE_BOT_PAT }}
+          organization: Riskidev
+          requested-token-type: urn:pulumi:token-type:access_token:team
+          scope: team:query-service
+
+      - name: Load ESC (thunderstore-query-service)
+        uses: pulumi/esc-action@v3
+        with:
+          environment: Riskidev/infra-v2/thunderstore-query-service
+          export-environment-variables: ANALYTICS_PLATFORM_PAT_RO
+
+      - name: Check ESC tokens
+        run: |
+          if [[ -z "${ANALYTICS_PLATFORM_PAT_RO:-}" ]]; then
+            echo "ESC did not inject ANALYTICS_PLATFORM_PAT_RO." >&2
+            echo "Confirm Riskidev/infra-v2/thunderstore-query-service has that key under values.environmentVariables." >&2
+            exit 1
+          fi
+          echo "::add-mask::${ANALYTICS_PLATFORM_PAT_RO}"
+
+      - name: Checkout analytics-platform submodule
+        run: |
+          set -euo pipefail
+          git config --local url."https://x-access-token:${ANALYTICS_PLATFORM_PAT_RO}@github.com/Riskidev/analytics-platform".insteadOf \
+            "https://github.com/Riskidev/analytics-platform"
+          git submodule update --init --recursive -- analytics-platform
 
       - uses: jdx/mise-action@v2
         with:
