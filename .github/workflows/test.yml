@@ -19,4 +19,4 @@ jobs:
           install: true
           cache: true
       - name: Run tests
-        run: mise run test
+        run: mise run test-unit

@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "fastapi[standard]>=0.141.1",
+    "httpx2>=2.9.1",
 ]
 
 [build-system]
@@ -19,4 +20,16 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.1",
+    "testcontainers>=4.15.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+python_files = ["test_*.py", "*_test.py", "integration_test_*.py"]
+markers = [
+    "integration: Start a Docker based ClickHouse container; requires the Docker daemon to be running",
+]
+
+[tool.ruff]
+extend-exclude = ["analytics-platform"]

@@ -1,4 +1,6 @@
 [env]
+TABLE_PREFIX = "dev"
 CLICKHOUSE_URI = ""
 CLICKHOUSE_USER = ""
 CLICKHOUSE_PASSWORD = ""
+CORS_ALLOW_ORIGINS = "http://thunderstore.localhost"
