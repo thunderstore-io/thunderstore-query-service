@@ -54,5 +54,8 @@ jobs:
           install: true
           cache: true
 
+      - name: Run unit tests
+        run: mise run test-unit
+
       - name: Run integration tests
         run: mise run test-integration
