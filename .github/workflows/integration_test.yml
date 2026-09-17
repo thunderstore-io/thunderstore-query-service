@@ -46,9 +46,8 @@ jobs:
       - name: Checkout analytics-platform submodule
         run: |
           set -euo pipefail
-          git config --local url."https://x-access-token:${ANALYTICS_PLATFORM_PAT_RO}@github.com/Riskidev/analytics-platform".insteadOf \
-            "https://github.com/Riskidev/analytics-platform"
-          git submodule update --init --recursive -- analytics-platform
+          git -c "url.https://x-access-token:${ANALYTICS_PLATFORM_PAT_RO}@github.com/Riskidev/analytics-platform.insteadOf=https://github.com/Riskidev/analytics-platform" \
+            submodule update --init --recursive -- analytics-platform
 
       - uses: jdx/mise-action@v2
         with:
