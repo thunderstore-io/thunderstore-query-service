@@ -33,8 +33,8 @@ class ReadinessStatus(BaseModel):
 async def _clickhouse_status() -> CheckStatus:
     try:
         await query_clickhouse("SELECT 1", timeout=CLICKHOUSE_TIMEOUT_SECONDS)
-    except HTTPError:
-        logger.exception("ClickHouse readiness check failed")
+    except HTTPError as exc:
+        logger.warning("ClickHouse readiness check failed: %r", exc)
         return "unavailable"
     return "ok"
 
