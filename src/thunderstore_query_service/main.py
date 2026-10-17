@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers.charts import downloads_router
+from .routers.health import router as health_router
 
 app = FastAPI()
 
@@ -23,3 +24,4 @@ if allow_origins := _cors_allow_origins():
     )
 
 app.include_router(downloads_router)
+app.include_router(health_router)
