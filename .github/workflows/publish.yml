@@ -1,0 +1,115 @@
+name: Publish
+
+permissions:
+  contents: write
+  packages: write
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate semantic version tag
+        run: |
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag '${GITHUB_REF_NAME}' is not a semantic version (expected vMAJOR.MINOR.PATCH[-prerelease][+build])." >&2
+            exit 1
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          set -euo pipefail
+          previous_tag="$(git describe --tags --abbrev=0 --match 'v*.*.*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          if [[ -n "${previous_tag}" ]]; then
+            range="${previous_tag}..${GITHUB_REF_NAME}"
+            compare_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${previous_tag}...${GITHUB_REF_NAME}"
+          else
+            range="${GITHUB_REF_NAME}"
+            compare_url=""
+          fi
+
+          {
+            echo "## Changes"
+            echo
+            git log --no-merges --pretty=format:'- %s (%h)' "${range}"
+            echo
+            if [[ -n "${compare_url}" ]]; then
+              echo
+              echo "**Full diff**: ${compare_url}"
+            fi
+            echo
+            echo "## Image"
+            echo
+            echo '```'
+            echo "docker pull ${REGISTRY}/${IMAGE_NAME,,}:${GITHUB_REF_NAME#v}"
+            echo '```'
+          } > "${RUNNER_TEMP}/CHANGELOG.md"
+
+          cat "${RUNNER_TEMP}/CHANGELOG.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref_name, 'v0.') }}
+            type=sha
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          prerelease_flag=""
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            prerelease_flag="--prerelease"
+          fi
+
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release edit "${GITHUB_REF_NAME}" --notes-file "${RUNNER_TEMP}/CHANGELOG.md"
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "${GITHUB_REF_NAME}" \
+              --notes-file "${RUNNER_TEMP}/CHANGELOG.md" \
+              --verify-tag \
+              ${prerelease_flag}
+          fi
