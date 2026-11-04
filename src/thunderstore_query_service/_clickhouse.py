@@ -1,6 +1,9 @@
+import logging
 import os
 
 from httpx2 import AsyncClient, BasicAuth, Response
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 5.0
 
@@ -19,6 +22,10 @@ async def query_clickhouse(
             content=sql,
             params=params,
             timeout=timeout,
+        )
+    if response.is_error:
+        logger.error(
+            "ClickHouse returned %s: %s", response.status_code, response.text[:2000]
         )
     response.raise_for_status()
     return response
